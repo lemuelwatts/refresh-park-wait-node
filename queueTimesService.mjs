@@ -13,7 +13,7 @@ const PARK_IDS = [
 
 const pb = new PocketBase(process.env.PB_URL);
 
-const authData = await pb.collection("_superusers").authWithPassword(
+await pb.collection("_superusers").authWithPassword(
   process.env.PB_EMAIL,
   process.env.PB_PASSWORD
 );
@@ -130,7 +130,11 @@ async function updateAllParks() {
 // Run every 5 minutes
 cron.schedule('*/5 * * * *', async () => {
   console.log('Starting scheduled queue-times update...');
-  await updateAllParks();
+  try {
+    await updateAllParks();
+  } catch (err) {
+    console.error('Scheduled update failed:', err);
+  }
 });
 
 // For manual run (uncomment to test directly)
