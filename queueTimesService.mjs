@@ -13,10 +13,20 @@ const PARK_IDS = [
 
 const pb = new PocketBase(process.env.PB_URL);
 
-await pb.collection("_superusers").authWithPassword(
-  process.env.PB_EMAIL,
-  process.env.PB_PASSWORD
-);
+async function ensureAuth() {
+  if (!pb.authStore.isValid) {
+    try {
+      await pb.collection("_superusers").authWithPassword(
+        process.env.PB_EMAIL,
+        process.env.PB_PASSWORD
+      );
+      console.log("PocketBase re-authenticated.");
+    } catch (err) {
+      console.error("PocketBase authentication failed:", err);
+      throw err;
+    }
+  }
+}
 
 async function fetchParkData(parkId) {
   const url = `https://queue-times.com/parks/${parkId}/queue_times.json`;
@@ -131,6 +141,7 @@ async function updateAllParks() {
 cron.schedule('*/5 * * * *', async () => {
   console.log('Starting scheduled queue-times update...');
   try {
+    await ensureAuth();
     await updateAllParks();
   } catch (err) {
     console.error('Scheduled update failed:', err);
